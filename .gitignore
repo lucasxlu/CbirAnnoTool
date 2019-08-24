@@ -1,0 +1,6 @@
+# Created by .ignore support plugin (hsz.mobi)
+.idea/
+CbirAnnoTool/__pycache__/
+cv/__pycache__/
+__pycache__/
+pyWeb/
