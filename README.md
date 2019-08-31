@@ -7,9 +7,17 @@ An online annotation toolkit with web-based UI for ```Image Retrieval/ReID``` ta
 
 ![index](./index.png)
 
+### Backbone
+| Architecture | Supervision | Status |
+| :---: |:---: |:---: |
+| DenseNet121 | Softmax | √ |
+| DenseNet121 | A-Softmax | [TODO] |
+| ResNeXt50 | A-Softmax | [TODO] |
+| SeResNeXt50 | A-Softmax | [TODO] |
 
-Dependency:
- * [faiss](https://github.com/facebookresearch/faiss.git)
+
+### Dependency
+ * [Faiss](https://github.com/facebookresearch/faiss.git)
  * [Django](https://www.djangoproject.com/)
  
 

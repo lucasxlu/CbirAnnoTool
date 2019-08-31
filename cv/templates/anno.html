@@ -63,9 +63,8 @@
     <form enctype="multipart/form-data" style="width: 30%">{% csrf_token %}
         <span>SKU Code:</span>
         <input type="number" id="skuCode" placeholder="Input SKU code" style="margin-bottom: 10px"/>
-        <input type="button" value="download SKU" id='download-sku'
-               class="am-btn am-btn-primary am-btn-block"
-               onclick="downloadSku()">
+        <input type="button" value="Download SKU" class="am-btn am-btn-primary am-btn-block" onclick="downloadSku()"/>
+        <a id="download-sku" style="display: none"></a>
     </form>
 </div>
 
@@ -141,18 +140,23 @@
                 contentType: 'application/text',
                 data: {skuCode: skuCode, imgs: selectedImgs.join('\n')},
                 success: function (res) {
+                    flag = false;
                     var result = eval('(' + res + ')');
                     var txtsrc = "http://argus3.booking.w.bj1.wormpex.com:8002" + result['file'];
-                    var newTag = "<a href='" + txtsrc + "' download='" + result['file'].split('/')[result['file'].split('/').length - 1] + "' ></a>";
-                    console.log(newTag);
-                    $('body').append(newTag);
-                    $('a').trigger('click');
+                    $('a#download-sku').attr({
+                        'download': result['file'].split('/')[result['file'].split('/').length - 1],
+                        'href': txtsrc
+                    });
+                    $('a#download-sku')[0].click();
                 }
             });
         } else {
             alert('Please input SKU code!');
+            $('a#download-sku').removeAttr('download href');
         }
     }
+
 </script>
+
 </body>
 </html>
