@@ -31,7 +31,8 @@
     </head>
 <body>
 
-<h2 align="center" style="font-family: 'Times New Roman'">Visual Search Web Annotation Tools</h2>
+<h2 align="center" style="font-family: 'Times New Roman'">Visual Search Web
+    Annotation Tools</h2>
 
 <div align="center" style="border: 2px pink;">
     <h5 align="center" style="font-family: 'Times New Roman'">Upload image
@@ -50,7 +51,8 @@
                    class="am-btn am-btn-success am-btn-block"
                    onclick="search()">
         </form>
-        <h3 align="center" style="font-family: 'Times New Roman'">Query Image</h3>
+        <h3 align="center" style="font-family: 'Times New Roman'">Query
+            Image</h3>
 
         <img class="am-img-responsive" alt="" src="" style="max-height: 320px;
     margin-top: 5px"/>
@@ -62,8 +64,11 @@
 <div align="center">
     <form enctype="multipart/form-data" style="width: 30%">{% csrf_token %}
         <span>SKU Code:</span>
-        <input type="number" id="skuCode" placeholder="Input SKU code" style="margin-bottom: 10px"/>
-        <input type="button" value="Download SKU" class="am-btn am-btn-primary am-btn-block" onclick="downloadSku()"/>
+        <input type="number" id="skuCode" placeholder="Input SKU code"
+               style="margin-bottom: 10px"/>
+        <input type="button" value="Download SKU"
+               class="am-btn am-btn-primary am-btn-block"
+               onclick="downloadSku()"/>
         <a id="download-sku" style="display: none"></a>
     </form>
 </div>
@@ -100,7 +105,7 @@
                 var htmlContent = '<div class=\"card\">';
                 for (var i = 0; i < results.length; i++) {
                     var res = results[i];
-                    htmlContent += '<img class=rect src=\"http://swift.blibee.com/v1/AUTH_displayimagebiaozhu/yinliao/' +
+                    htmlContent += '<img class=rect src=\"http://www.qq.com/' +
                         res + '\" alt=\"' + res + '\"/>';
                 }
                 htmlContent += '</div>';
@@ -124,6 +129,7 @@
 
 <script>
     function downloadSku() {
+        var domain_port = "http://www.qq.com:8002";
         var skuCode = $('#skuCode').val();
         if (skuCode.length > 0) {
             var selectedImgs = [];
@@ -142,7 +148,7 @@
                 success: function (res) {
                     flag = false;
                     var result = eval('(' + res + ')');
-                    var txtsrc = "http://argus3.booking.w.bj1.wormpex.com:8002" + result['file'];
+                    var txtsrc = domain_port + result['file'];
                     $('a#download-sku').attr({
                         'download': result['file'].split('/')[result['file'].split('/').length - 1],
                         'href': txtsrc
