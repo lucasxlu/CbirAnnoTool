@@ -11,6 +11,7 @@ An online annotation toolkit with web-based UI for ```Image Retrieval/ReID``` ta
 | Architecture | Supervision | Status |
 | :---: |:---: |:---: |
 | DenseNet121 | Softmax | YES |
+| DenseNet121 | CenterLoss | YES |
 | DenseNet121 | A-Softmax | [TODO] |
 | ResNeXt50 | A-Softmax | [TODO] |
 | SeResNeXt50 | A-Softmax | [TODO] |
