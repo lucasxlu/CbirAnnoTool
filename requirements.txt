@@ -2,7 +2,7 @@ opencv_python==3.4.5.20
 django>=2.1.5
 requests==2.22.0
 pandas==0.24.2
-Pillow==6.0.0
+pillow>=6.2.0
 scikit-image==0.15.0
 scikit_learn==0.21.2
 dlib==19.17.0
