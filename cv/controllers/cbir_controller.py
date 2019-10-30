@@ -16,9 +16,12 @@ from skimage.color import gray2rgb
 from torchvision import models
 from torchvision.transforms import transforms
 
+from cv.preprocess.densenet import DenseNet121
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 URL_PORT = 'http://localhost:8000'
 USE_GPU = True
+LOSS = 1  # 0--SoftmaxLoss, 1--CenterLoss, 2--A-SoftmaxLoss
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:[%(levelname)s] %(message)s',
                     handlers=[
@@ -87,12 +90,19 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 class ImageSearcher:
-    def __init__(self, index_filename_pkl='cv/filenames.pkl', feats_pkl='cv/feats.pkl'):
-        densenet121 = models.densenet121(pretrained=False)
-        num_ftrs = densenet121.classifier.in_features
-        densenet121.classifier = nn.Linear(num_ftrs, 196)
+    def __init__(self, index_filename_pkl='cv/preprocess/idx_TissuePhysiology.pkl',
+                 feats_pkl='cv/preprocess/feats_TissuePhysiology.pkl'):
 
-        state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_TissuePhysiology_Embedding.pth')
+        if LOSS == 0:
+            # For Softmax Loss
+            densenet121 = models.densenet121(pretrained=False)
+            num_ftrs = densenet121.classifier.in_features
+            densenet121.classifier = nn.Linear(num_ftrs, 161)
+        elif LOSS == 1 or LOSS == 2:
+            # For CenterLoss and A-Softmax Loss
+            densenet121 = DenseNet121(161)
+
+        state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_TissuePhysiology_Embedding_DataAug.pth')
         try:
             from collections import OrderedDict
             new_state_dict = OrderedDict()
@@ -128,6 +138,7 @@ class ImageSearcher:
         :param img_filepath:
         :return:
         """
+        print(self.model)
         model_name = self.model.__class__.__name__
 
         self.model.eval()
@@ -157,12 +168,16 @@ class ImageSearcher:
 
                 inputs = img.to(self.device)
 
-                feat = self.model.features(inputs)
-                feat = F.relu(feat, inplace=True)
-                feat = F.adaptive_avg_pool2d(feat, (1, 1)).view(feat.size(0), -1)
+                if LOSS == 0:
+                    feat = self.model.features(inputs)
+                    feat = F.relu(feat, inplace=True)
+                    feat = F.adaptive_avg_pool2d(feat, (1, 1)).view(feat.size(0), -1)
+                elif LOSS == 1 or LOSS == 2:
+                    feat = self.model.model.features(inputs)
+                    feat = F.relu(feat, inplace=True)
+                    feat = F.adaptive_avg_pool2d(feat, (1, 1)).view(feat.size(0), -1)
 
-                # print('feat size = {}'.format(feat.shape))
-
+                    # print('feat size = {}'.format(feat.shape))
         feat = feat.to('cpu').detach().numpy()
 
         return feat / np.linalg.norm(feat)

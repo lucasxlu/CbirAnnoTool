@@ -3,7 +3,9 @@
 <p align="left"><img src="logo/horizontal.svg" alt="XCloud" height="120px"></p>
 
 ## Introduction
-An online annotation toolkit with web-based UI for ```Image Retrieval/ReID``` tasks. It is freely accessible to **both research and industrial** fields. 
+An online annotation toolkit with web-based UI for ```Image Retrieval/ReID``` tasks. It is freely accessible to **both research and industrial** fields.
+
+**Note**: training and testing codes can be found from [XCloud](https://github.com/lucasxlu/XCloud/tree/master/research/cbir). 
 
 ![index](./index.png)
 
