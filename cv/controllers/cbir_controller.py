@@ -21,7 +21,8 @@ from cv.preprocess.densenet import DenseNet121
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 URL_PORT = 'http://localhost:8000'
 USE_GPU = True
-LOSS = 1  # 0--SoftmaxLoss, 1--CenterLoss, 2--A-SoftmaxLoss
+LOSS = 2  # 0--SoftmaxLoss, 1--CenterLoss, 2--A-SoftmaxLoss
+OUT_NUM = 391
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:[%(levelname)s] %(message)s',
                     handlers=[
@@ -90,19 +91,19 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 class ImageSearcher:
-    def __init__(self, index_filename_pkl='cv/preprocess/idx_TissuePhysiology.pkl',
-                 feats_pkl='cv/preprocess/feats_TissuePhysiology.pkl'):
+    def __init__(self, index_filename_pkl='cv/preprocess/idx_AdditiveFood.pkl',
+                 feats_pkl='cv/preprocess/feats_AdditiveFood.pkl'):
 
         if LOSS == 0:
             # For Softmax Loss
             densenet121 = models.densenet121(pretrained=False)
             num_ftrs = densenet121.classifier.in_features
-            densenet121.classifier = nn.Linear(num_ftrs, 161)
+            densenet121.classifier = nn.Linear(num_ftrs, OUT_NUM)
         elif LOSS == 1 or LOSS == 2:
             # For CenterLoss and A-Softmax Loss
-            densenet121 = DenseNet121(161)
+            densenet121 = DenseNet121(LOSS, OUT_NUM)
 
-        state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_TissuePhysiology_Embedding_DataAug.pth')
+        state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_TissuePhysiology_Embedding_AngularLoss.pth')
         try:
             from collections import OrderedDict
             new_state_dict = OrderedDict()
@@ -182,7 +183,7 @@ class ImageSearcher:
 
         return feat / np.linalg.norm(feat)
 
-    def search(self, query_img, topK=100):
+    def search(self, query_img, topK=300):
         """
         search TopK results:
         :param topK:

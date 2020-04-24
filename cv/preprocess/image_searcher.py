@@ -11,7 +11,7 @@ import faiss
 from torchvision import models
 
 sys.path.append('../../')
-from products.retrieval.ext_feats_softmaxloss import ext_deep_feat
+from cv.preprocess.ext_feats_softmaxloss import ext_deep_feat
 
 
 def build_faiss_index(nd_feats_array, mode):
