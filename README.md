@@ -27,7 +27,7 @@ An online annotation toolkit with web-based UI for ```Image Retrieval/ReID/Face 
 ## How to use
 1. Train your embedding model with the code provided in [XCloud](https://github.com/lucasxlu/XCloud.git) [cbir branch](https://github.com/lucasxlu/XCloud/tree/master/research/cbir).
 2. Extract deep features with the code provided in [preprocess](cv/preprocess), [CbirAnnoTool](https://github.com/lucasxlu/CbirAnnoTool.git) support [SoftmaxLoss](cv/preprocess/ext_feats_softmaxloss.py),
-[CenterLoss](cv/preprocess/ext_feats_centerloss.py) and [AngularLoss](cv/preprocess/ext_feats_angularloss.py). 
+[CenterLoss](cv/preprocess/ext_feats_centerloss.py) and [ASoftmaxLoss](cv/preprocess/ext_feats_asoftmaxloss.py). 
 3. Start Django service by ```python3 manage.py runserver 0.0.0.0:8001```
 4. Open your browser and visit **http://YOUR_MACHINE_IP:8001/cv/annoview**
 

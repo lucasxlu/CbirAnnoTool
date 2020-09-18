@@ -2,9 +2,8 @@ import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch import Tensor
 from torch.nn import Parameter
-from torch.optim import lr_scheduler
 from torchvision import models
 
 
@@ -12,6 +11,25 @@ def myphi(x, m):
     x = x * m
     return 1 - x ** 2 / math.factorial(2) + x ** 4 / math.factorial(4) - x ** 6 / math.factorial(6) + \
            x ** 8 / math.factorial(8) - x ** 9 / math.factorial(9)
+
+
+class Flatten(nn.Module):
+    """
+    self constructed Flatten Module
+    Note: use nn.Flatten() directly after PyTorch 1.5 or higher
+    """
+
+    __constants__ = ['start_dim', 'end_dim']
+    start_dim: int
+    end_dim: int
+
+    def __init__(self, start_dim: int = 1, end_dim: int = -1) -> None:
+        super(Flatten, self).__init__()
+        self.start_dim = start_dim
+        self.end_dim = end_dim
+
+    def forward(self, input: Tensor) -> Tensor:
+        return input.flatten(self.start_dim, self.end_dim)
 
 
 class AngleLinear(nn.Module):
@@ -34,13 +52,13 @@ class AngleLinear(nn.Module):
 
     def forward(self, input):
         x = input  # size=(B,F)    F is feature len
-        w = self.weight  # size=(F,Classnum) F=in_features Classnum=out_features
+        w = self.weight  # size=(F, ClassNum) F=in_features  ClassNum=out_features
 
         ww = w.renorm(2, 1, 1e-5).mul(1e5)
         xlen = x.pow(2).sum(1).pow(0.5)  # size=B
-        wlen = ww.pow(2).sum(0).pow(0.5)  # size=Classnum
+        wlen = ww.pow(2).sum(0).pow(0.5)  # size= ClassNum
 
-        cos_theta = x.mm(ww)  # size=(B,Classnum)
+        cos_theta = x.mm(ww)  # size=(B, ClassNum)
         cos_theta = cos_theta / xlen.view(-1, 1) / wlen.view(1, -1)
         cos_theta = cos_theta.clamp(-1, 1)
 
@@ -59,36 +77,39 @@ class AngleLinear(nn.Module):
         phi_theta = phi_theta * xlen.view(-1, 1)
         output = (cos_theta, phi_theta)
 
-        return output  # size=(B,Classnum,2)
+        return output  # size=(B, ClassNum, 2)
 
 
 class DenseNet121(nn.Module):
     """
-    DenseNet with features, constructed for CenterLoss and AngularLoss
+    DenseNet121 as backbone, constructed for ASoftmaxLoss
     """
 
-    def __init__(self, loss_type, num_cls):
-        assert loss_type in [1, 2]
+    def __init__(self, num_cls, embedding_dim=1024):
         super(DenseNet121, self).__init__()
         self.__class__.__name__ = 'DenseNet121'
         densenet121 = models.densenet121(pretrained=True)
+        self.features = densenet121.features
         num_ftrs = densenet121.classifier.in_features
-        if loss_type == 1:
-            densenet121.classifier = nn.Linear(num_ftrs, num_cls)
-        elif loss_type == 2:
-            densenet121.classifier = nn.Sequential(nn.Linear(num_ftrs, 1024), AngleLinear(1024, num_cls))
-        self.model = densenet121
+        self.embedding = nn.Sequential(
+            nn.ReLU(inplace=True),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            Flatten(),
+            nn.Linear(num_ftrs, embedding_dim, bias=False),
+            nn.BatchNorm1d(embedding_dim)
+        )
+        self.classifier = AngleLinear(embedding_dim, num_cls)
 
     def forward(self, x):
-        for name, module in self.model.named_children():
-            if name == 'features':
-                feats = module(x)
-                feats = F.relu(feats, inplace=True)
-                feats = F.avg_pool2d(feats, kernel_size=7, stride=1).view(feats.size(0), -1)
-            elif name == 'classifier':
-                out = module(feats)
+        """
+        feedforward an image, return pooling features (with BNNeck) and logits before softmax layer
+        :param x:
+        :return:
+        """
+        feats = self.embedding(self.features(x))
+        logits = self.classifier(feats)
 
-        return feats, out
+        return feats, logits
 
     def num_flat_features(self, x):
         size = x.size()[1:]  # all dimensions except the batch dimension

@@ -1,15 +1,19 @@
 import os
 import sys
 import pickle
+import math
+import time
 
 from PIL import Image
 import numpy as np
 from skimage import io
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 import torch.nn.functional as F
 from skimage.color import gray2rgb, rgba2rgb
+from torch.nn import Parameter
 from torchvision import models
 from torchvision.transforms import transforms
 
@@ -77,15 +81,14 @@ def ext_deep_feat(model_with_weights, img_filepath):
 
             inputs = img.to(device)
 
-            feat = model_with_weights.model.features(inputs)
-            feat = F.relu(feat, inplace=True)
-            feat = F.adaptive_avg_pool2d(feat, (1, 1)).view(feat.size(0), -1)
+            feat = model_with_weights.embedding(model_with_weights.features(inputs))
 
             # print('feat size = {}'.format(feat.shape))
 
     feat = feat.to('cpu').detach().numpy()
+    feat = feat / np.linalg.norm(feat)
 
-    return feat / np.linalg.norm(feat)
+    return feat
 
 
 def ext_feats_in_dir(model_with_weights, gallery_img_root):
@@ -104,8 +107,10 @@ def ext_feats_in_dir(model_with_weights, gallery_img_root):
     capacity_of_gallery = len(os.listdir(gallery_img_root))
 
     for img_f in sorted(os.listdir(gallery_img_root)):
+        tik = time.time()
         feat = ext_deep_feat(model_with_weights, os.path.join(gallery_img_root, img_f))
-        print('[INFO] {0}/{1} extracting deep features, feat size = {2}'.format(idx, capacity_of_gallery, feat.shape))
+        tok = time.time()
+        print('[INFO] {0}/{1} extracting deep features, feat size = {2}, latency = {3}'.format(idx, capacity_of_gallery, feat.shape, tok - tik))
 
         idx_filename[idx] = '{}'.format(img_f)
         feats.append(feat.ravel().tolist())
@@ -120,9 +125,9 @@ def ext_feats_in_dir(model_with_weights, gallery_img_root):
 
 
 if __name__ == '__main__':
-    densenet121 = DenseNet121(num_cls=161)
+    densenet121 = DenseNet121(num_cls=362)
 
-    state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_%s_Embedding_CenterLoss.pth'%CLS_NAME)
+    state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_{}_Embedding_ASoftmaxLoss.pth'.format(CLS_NAME))
     try:
         from collections import OrderedDict
 

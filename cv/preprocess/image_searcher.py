@@ -67,15 +67,16 @@ def search(index, query_feat, topK):
 
 
 if __name__ == '__main__':
+    class_name = 'AdditiveFood'
     print('[INFO] loading gallery features')
-    with open('./feats_TissuePhysiology.pkl', mode='rb') as f:
+    with open('./feats_%s.pkl'%class_name, mode='rb') as f:
         nd_feats_array = pickle.load(f).astype('float32')
     print(nd_feats_array.shape)
     print('[INFO] finish loading gallery\n[INFO] building index...')
     index = build_faiss_index(nd_feats_array, mode=0)
     print('[INFO] finish building index...')
 
-    with open('./filenames.pkl', mode='rb') as f:
+    with open('./idx_%s.pkl'%class_name, mode='rb') as f:
         idx_filename = pickle.load(f)
 
     densenet121 = models.densenet121(pretrained=True)

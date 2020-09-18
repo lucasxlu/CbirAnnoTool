@@ -21,8 +21,11 @@ from cv.preprocess.densenet import DenseNet121
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 URL_PORT = 'http://localhost:8000'
 USE_GPU = True
+
+# modified the following info to fit your config
 LOSS = 2  # 0--SoftmaxLoss, 1--CenterLoss, 2--A-SoftmaxLoss
-OUT_NUM = 391
+OUT_NUM = 362
+CLASS_NAME = 'AdditiveFood'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s:[%(levelname)s] %(message)s',
                     handlers=[
@@ -49,7 +52,7 @@ def build_faiss_index(nd_feats_array, mode):
         return cpu_index
     elif mode == 1:
         ngpus = faiss.get_num_gpus()
-        logging.info("number of GPUs:", ngpus)
+        logging.info("number of GPUs: {}".format(ngpus))
         res = faiss.StandardGpuResources()  # use a single GPU
         gpu_index = faiss.index_cpu_to_gpu(res, 0, cpu_index)
         gpu_index.add(nd_feats_array)  # add vectors to the index
@@ -91,8 +94,8 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 class ImageSearcher:
-    def __init__(self, index_filename_pkl='cv/preprocess/idx_AdditiveFood.pkl',
-                 feats_pkl='cv/preprocess/feats_AdditiveFood.pkl'):
+    def __init__(self, index_filename_pkl='cv/preprocess/idx_%s.pkl'%CLASS_NAME,
+                 feats_pkl='cv/preprocess/feats_%s.pkl'%CLASS_NAME):
 
         if LOSS == 0:
             # For Softmax Loss
@@ -101,9 +104,9 @@ class ImageSearcher:
             densenet121.classifier = nn.Linear(num_ftrs, OUT_NUM)
         elif LOSS == 1 or LOSS == 2:
             # For CenterLoss and A-Softmax Loss
-            densenet121 = DenseNet121(LOSS, OUT_NUM)
+            densenet121 = DenseNet121(OUT_NUM)
 
-        state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_TissuePhysiology_Embedding_AngularLoss.pth')
+        state_dict = torch.load('/data/lucasxu/ModelZoo/DenseNet121_%s_Embedding_ASoftmaxLoss.pth'%CLASS_NAME)
         try:
             from collections import OrderedDict
             new_state_dict = OrderedDict()
@@ -122,7 +125,7 @@ class ImageSearcher:
             nd_feats_array = pickle.load(f).astype('float32')
         logging.debug(nd_feats_array.shape)
         logging.debug('finish loading gallery\n[INFO] building index...')
-        index = build_faiss_index(nd_feats_array, mode=0)
+        index = build_faiss_index(nd_feats_array, mode=1)
         logging.debug('finish building index...')
 
         with open(index_filename_pkl, mode='rb') as f:
@@ -165,8 +168,6 @@ class ImageSearcher:
 
                 img = preprocess(Image.fromarray(image.astype(np.uint8)))
                 img.unsqueeze_(0)
-                img = img.to(self.device)
-
                 inputs = img.to(self.device)
 
                 if LOSS == 0:
@@ -174,14 +175,13 @@ class ImageSearcher:
                     feat = F.relu(feat, inplace=True)
                     feat = F.adaptive_avg_pool2d(feat, (1, 1)).view(feat.size(0), -1)
                 elif LOSS == 1 or LOSS == 2:
-                    feat = self.model.model.features(inputs)
-                    feat = F.relu(feat, inplace=True)
-                    feat = F.adaptive_avg_pool2d(feat, (1, 1)).view(feat.size(0), -1)
+                    feat, logit = self.model(inputs)
 
                     # print('feat size = {}'.format(feat.shape))
         feat = feat.to('cpu').detach().numpy()
+        feat = feat / np.linalg.norm(feat)
 
-        return feat / np.linalg.norm(feat)
+        return feat
 
     def search(self, query_img, topK=300):
         """
