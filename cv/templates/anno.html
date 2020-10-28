@@ -148,7 +148,7 @@
                 success: function (res) {
                     flag = false;
                     var result = eval('(' + res + ')');
-                    var txtsrc = domain_port + result['file'];
+                    var txtsrc = result['file'];
                     $('a#download-sku').attr({
                         'download': result['file'].split('/')[result['file'].split('/').length - 1],
                         'href': txtsrc
