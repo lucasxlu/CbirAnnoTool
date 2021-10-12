@@ -1,4 +1,4 @@
-opencv_python==3.4.5.20
+opencv_python==3.4.7.28
 django>=2.1.5
 requests==2.22.0
 pandas==0.24.2
